@@ -1,0 +1,35 @@
+name: Update Filtered RSS Feed
+
+on:
+  schedule:
+    - cron: '0 * * * *' # Every hour
+  workflow_dispatch:
+
+jobs:
+  build_and_run:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Install dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libcurl4-openssl-dev libpugixml-dev g++
+
+      - name: Compile C++ program
+        run: g++ -O2 filter_rss.cpp -lcurl -lpugixml -o filter_rss
+
+      - name: Run RSS filter
+        run: ./filter_rss
+
+      - name: Commit and push updated feed
+        run: |
+          git config --global user.name "github-actions[bot]"
+          git config --global user.email "github-actions[bot]@users.noreply.github.com"
+          git add rss.xml
+          git diff --staged --quiet || git commit -m "Auto-update RSS feed [C++]"
+          git push
